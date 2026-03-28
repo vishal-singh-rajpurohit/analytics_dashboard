@@ -9,8 +9,8 @@ from .routes.reports import reportsRouter
 
 app = FastAPI()
 
-app.include_router(userRouter, prefix="/api/v1")
 app.include_router(authRouter, prefix="/api/v1")
+app.include_router(userRouter, prefix="/api/v1")
 app.include_router(analyticsRouter, prefix="/api/v1")
 app.include_router(contactsRouter, prefix="/api/v1")
 app.include_router(reportsRouter, prefix="/api/v1")

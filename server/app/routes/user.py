@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from ..schemas.req_body import get_user_schema
+from ..schemas.req_body import GetItemSchema
 
 userRouter = APIRouter(prefix='/users', tags=['USER'])
 
@@ -8,7 +8,7 @@ def root():
     return {"message": "Hii i am herer 🤣"}
 
 @userRouter.post('/')
-def post_get_user(payload: get_user_schema):
+def post_get_user(payload: GetItemSchema):
     pass
 
 @userRouter.post('/suspend')

@@ -1,7 +1,7 @@
 from mongoengine import  Document, StringField, EmailField, BooleanField, ListField, ReferenceField, EnumField, DateTimeField, IntField, EmbeddedDocument, EmbeddedDocumentField, NULLIFY
 from enum import Enum
 from datetime import datetime
-
+from ..utils.hash import hash_password, verify_password, is_hashed
 
 def encrypt_message():
     pass
@@ -15,15 +15,15 @@ class Admin(Document):
 
     superior = ReferenceField(
         'self',
-        reverse_delete_rule=NULLIFY
+        reverse_delete_rule=NULLIFY,
     )
 
     email = EmailField(required=True, unique=True)
 
     mobile = StringField(
         required=True,
-        min_length=12,
-        max_length=12,
+        min_length=10,
+        max_length=15,
         unique=True
     )
 
@@ -37,8 +37,8 @@ class Admin(Document):
         default=RoleEnum.SUPER_ADMIN
     )
 
-    access_token = StringField(default="")
-
+    refreshToken = StringField(required=True, default="")
+    
     createdAt = DateTimeField(default=datetime.utcnow)
     updatedAt = DateTimeField(default=datetime.utcnow)
 
@@ -53,7 +53,18 @@ class Admin(Document):
 
     def save(self, *args, **kwargs):
         self.updatedAt = datetime.utcnow()
+
+        if not is_hashed(self.password):
+            self.password = hash_password(self.password)
+
         return super(Admin, self).save(*args, **kwargs)
+
+
+    def genrate_refresh_token(self, *args, **kwargs):
+        pass
+
+    # def genrate_access_token(self, *args, **kwargs):
+        # pass
 
 class Users(Document):
     meta = {"strict": False}

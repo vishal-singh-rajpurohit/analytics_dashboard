@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-reportsRouter = APIRouter(prefix='/reports', tags=['AUTH'])
+reportsRouter = APIRouter(prefix='/reports', tags=['REPORTS'])
 
 
 @reportsRouter.get('/')

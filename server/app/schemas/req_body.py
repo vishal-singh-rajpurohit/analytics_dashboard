@@ -28,3 +28,7 @@ class NotifyMessageSchema(BaseModel):
     id: str
     message: str
 
+class SuspendUserSchema(BaseModel):
+    email: str
+
+
