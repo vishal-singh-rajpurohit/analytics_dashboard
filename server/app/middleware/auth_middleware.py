@@ -4,7 +4,6 @@ from ..models.db_models import Admin, RoleEnum
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
@@ -26,7 +25,6 @@ def is_logged_in(req: Request):
 
     req.state.is_authenticted = True
     return req.state.is_authenticted
-
 
 async def restrict_unautharised_access(req: Request):
     access_token = req.cookies.get("ACCESS_TOKEN")
@@ -52,4 +50,3 @@ async def restrict_unautharised_access(req: Request):
     
     req.state.is_admin = True
     return req.state.is_admin
-

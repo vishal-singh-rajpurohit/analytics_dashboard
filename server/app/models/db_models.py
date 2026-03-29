@@ -94,7 +94,7 @@ class Users(Document):
 
 class Contacts(Document):
     meta = {
-        "collection": "contact",
+        "collection": "contacts",
         "strict": False 
     }
 
@@ -106,7 +106,6 @@ class Contacts(Document):
 
     createdBy = ReferenceField("Users")
 
-
     isGroup = BooleanField(required=True, default=False)
     groupAvatar = StringField()
     groupName = StringField()
@@ -117,9 +116,7 @@ class Contacts(Document):
 
     description = StringField()
 
-
     lastMessage = StringField(default="", required=True)
-
 
     socketId = StringField(default=None)
 
@@ -131,10 +128,10 @@ class Contacts(Document):
     def save(self, *args, **kwargs):
         self.updatedAt = datetime.utcnow()
         return super(Admin, self).save(*args, **kwargs)
-
+    
 class Feedback(Document):
     meta = {
-        "collection": "feedback",
+        "collection": "feedbacks",
         "strict": False
     }
 

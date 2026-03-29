@@ -1,18 +1,18 @@
 from fastapi import APIRouter, status, HTTPException, Response, Request, Depends
-from ..models.db_models import Admin
+from dotenv import load_dotenv
+import os
+
+from ..models.db_models import Admin, Users, Contacts, Feedback
 from ..schemas.req_body import RegisterReqSchema, LoginReqSchema, SuspendUserSchema
 from ..schemas.super_resp import RegisterSuperAdminRespSchema
-from ..schemas.resp_body import CreateAdminRespSchema, SuspendedAdminSchema, LogoutSchema
+from ..schemas.resp_body import CreateAdminRespSchema, SuspendedAdminSchema, LogoutSchema, LoginRespSchema
 from ..utils.hash import verify_password
 from ..utils.token import genrate_token, decrypt_token, TokenPayload
 from ..middleware.auth_middleware import is_logged_in, restrict_unautharised_access
-from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
 authRouter = APIRouter(prefix='/auth', tags=['AUTH'])
-
 
 REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
 REFRESH_TOKEN_EXPIRY = os.getenv("REFRESH_TOKEN_EXPIRY")
@@ -152,7 +152,7 @@ async def create_admin(payload: RegisterReqSchema, req: Request, resp: Response)
         password=payload.password
     )
 
-@authRouter.post('/login', response_model=RegisterSuperAdminRespSchema, status_code=status.HTTP_200_OK)
+@authRouter.post('/login', response_model=LoginRespSchema, status_code=status.HTTP_200_OK)
 async def login(payload:LoginReqSchema, response:Response):
     if not payload.email or not payload.password:
         raise HTTPException(
@@ -187,11 +187,105 @@ async def login(payload:LoginReqSchema, response:Response):
             }
         )
     
+    user_pipeline = [
+        {
+            '$match': {}
+        },
+        {
+            '$limit': 3
+        },
+        {
+            '$project': {
+            'searchTag': 1,
+            'online': 1
+            }
+        }
+    ]
+    
+    reports_pipeline = [
+        {'$match': {}},
+        {'$limit': 2},
+        {'$addFields': {'reportType': '$type'}},
+        {
+            '$project': {
+                'message': 1,
+                'reportType': 1,
+                'createdAt': 1
+            }
+        }
+    ]
 
+    contacts_pipeline = [
+        {'$match': {}},
+        {'$limit': 3},
+        {
+            '$lookup': {
+                'from': "users",
+                'localField': "oneOnOne",
+                'foreignField': "_id",
+                'as': "members"
+            }
+        },
+        {
+            '$unwind': {
+                'path': "$members",
+                'preserveNullAndEmptyArrays': True
+            }
+        },
+        {
+            '$addFields': {
+                'memberName': "$members.searchTag"
+            }
+        },
+        {
+            '$addFields': {
+                'contactType': {
+                    '$cond': ["$isGroup", "Group", "P2P"]
+                }
+            }
+        },
+        {
+            '$group': {
+                '_id': "$_id",
+                'createdAt': {'$first': "$createdAt"},
+                'contactType': {'$first': "$contactType"},
+                'members': {'$push': "$memberName"}
+            }
+        },
+        {
+            '$project': {
+                'oneOnOne': 0,
+                'lastMessage': 0,
+                'updatedAt': 0,
+                # 'members': 0
+            }
+        }
+    ]
+     
+    users = list(Users.objects().aggregate(user_pipeline))
+    reports = list(Feedback.objects().aggregate(reports_pipeline))
+    contacts = list(Contacts.objects().aggregate(contacts_pipeline))
+    
+    for item in users:
+        item['_id'] = str(item['_id'])
+
+    for item in reports:
+        item['_id'] = str(item['_id'])
+    
+    for item in contacts:
+        item['_id'] = str(item['_id'])
+        
+    if not users or not reports or not contacts:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                'message': 'Reports or User or Contacts not found'
+            }
+        )
+
+     
     access_tokens = genrate_token(TokenPayload(id=str(is_user.id), email=is_user.email, mobile=is_user.mobile), ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY)
-
     refresh_tokens = genrate_token(TokenPayload(id=str(is_user.id), email=is_user.email, mobile=is_user.mobile), REFRESH_TOKEN_SECRET, REFRESH_TOKEN_EXPIRY)
-
     decoded_data = decrypt_token(access_tokens, ACCESS_TOKEN_SECRET)
 
     Admin.objects(id=decoded_data['id']).update_one(set__refreshToken=refresh_tokens)
@@ -206,13 +300,16 @@ async def login(payload:LoginReqSchema, response:Response):
     response.set_cookie(key='ACCESS_TOKEN', value=access_tokens)
     response.set_cookie(key='REFRESH_TOKEN', value=refresh_tokens)
 
-    return RegisterSuperAdminRespSchema(
+    return LoginRespSchema(
         message='Done',
         id= str(is_user.id),
         email= is_user.email,
         name= is_user.name,
         mobile= is_user.mobile,
-        role=is_user.role
+        role=is_user.role,
+        contacts=contacts,
+        reports=reports,
+        users=users        
     )
 
 @authRouter.post('/suspend', response_model=SuspendedAdminSchema, status_code=status.HTTP_200_OK, dependencies=[Depends(restrict_unautharised_access)])
