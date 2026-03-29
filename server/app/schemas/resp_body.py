@@ -133,3 +133,60 @@ class LoginRespSchema(BaseModel):
     
     class Config:
         from_attributes = True
+
+class SingleReportSchema(BaseModel):
+    id: str = Field(alias='_id')
+    userId: str
+    contactId: str
+    type: str = Field(alias='reportType')
+    message: str
+    createdAt: datetime
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
+class GetSingleReportRespSchema(BaseModel):
+    message: str
+    report: SingleReportSchema
+
+    class Config:
+        from_attributes = True
+
+class SingleContactSchema(BaseModel):
+    id: str = Field(alias='_id')
+    oneOnOne: list[str]
+    isGroup: bool
+    lastMessage: str
+    createdAt: datetime
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+    
+class GetSingleContactRespSchema(BaseModel):
+    message: str
+    contact: SingleContactSchema
+
+    class Config:
+        from_attributes = True
+
+class SingleUserSchema(BaseModel):
+    id: str = Field(alias='_id')
+    userName: str
+    searchTag: str
+    email: str
+    avatar: str
+    longitude: float   
+    latitude: float    
+    createdAt: datetime
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+class GetSingleUserSchema(BaseModel):
+    message: str
+    user: SingleUserSchema
+
+    class Config:
+        from_attributes = True

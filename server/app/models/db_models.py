@@ -91,6 +91,7 @@ class Users(Document):
     def save(self, *args, **kwargs):
         self.updatedAt = datetime.utcnow()
         return super(Admin, self).save(*args, **kwargs)
+    
 
 class Contacts(Document):
     meta = {
@@ -136,7 +137,7 @@ class Feedback(Document):
     }
 
     userId = ReferenceField("Users", required=True)
-    contactId = ReferenceField("Contact", default=None)
+    contactId = ReferenceField("Contacts", default=None)
 
     message = StringField(default="No Message", required=True)
     type = StringField(required=True)

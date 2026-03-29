@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class GetItemSchema(BaseModel):
     count: int
-    page: int
+    page: int 
 
 class RegisterReqSchema(BaseModel):
     name:str
