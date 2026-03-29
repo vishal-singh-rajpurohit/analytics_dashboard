@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, HTTPException, status, Depends
 from ..middleware.auth_middleware import is_logged_in
-from ..schemas.resp_body import ReportOverviewResponseSchema, GetSingleReportRespSchema
+from ..schemas.resp_body import ReportOverviewResponseSchema, GetSingleReportRespSchema, SuspendUserSchema
 from ..models.db_models import Feedback
-from ..schemas.req_body import GetItemSchema
+from ..schemas.req_body import GetItemSchema, IdSchema
 from bson import ObjectId
 
 
@@ -85,11 +85,37 @@ async def get_report(id: str, req: Request):
         report=report
     )
 
-@reportsRouter.post('/reject')
-async def reject():
-    pass
+@reportsRouter.post('/reject', response_model=SuspendUserSchema, status_code=status.HTTP_200_OK)
+async def reject(payload: IdSchema, req: Request):
+    if not req.state.is_authenticted:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                'message': 'Unautharise Access'
+            }
+        )
+    
+    if not payload.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                'message': 'User id Required'
+            }
+        )
+    
+    report = Feedback.objects(id=payload.id).update_one(set__status="SPAM")
 
-@reportsRouter.post('/response')
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                'message': 'report not rejected'
+            }
+        )
+
+    return SuspendUserSchema(message="Report is Rejected")
+
+@reportsRouter.post('/resolve')
 async def resp():
     pass
 

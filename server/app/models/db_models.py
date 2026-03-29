@@ -77,6 +77,7 @@ class Users(Document):
     avatar = StringField(required=True, default="")
     online = BooleanField(required=True, default=False)
     theme = BooleanField(required=True, default=False)
+    isSuspended = BooleanField(required=True, default=False)
     showOnline = BooleanField(required=True, default=True)
     refreshToken = StringField(required=True, default="")
     securityQuestion = StringField(required=True, default="")
@@ -92,7 +93,6 @@ class Users(Document):
         self.updatedAt = datetime.utcnow()
         return super(Admin, self).save(*args, **kwargs)
     
-
 class Contacts(Document):
     meta = {
         "collection": "contacts",
@@ -141,6 +141,7 @@ class Feedback(Document):
 
     message = StringField(default="No Message", required=True)
     type = StringField(required=True)
+    status = StringField(required=True, default="NEW")
 
     createdAt = DateTimeField(default=datetime.utcnow)
     updatedAt = DateTimeField(default=datetime.utcnow)

@@ -184,9 +184,17 @@ class SingleUserSchema(BaseModel):
     class Config:
         populate_by_name = True
         from_attributes = True
+
+
 class GetSingleUserSchema(BaseModel):
     message: str
     user: SingleUserSchema
+
+    class Config:
+        from_attributes = True
+
+class SuspendUserSchema(BaseModel):
+    message: str
 
     class Config:
         from_attributes = True

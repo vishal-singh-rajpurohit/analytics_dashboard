@@ -30,5 +30,3 @@ class NotifyMessageSchema(BaseModel):
 
 class SuspendUserSchema(BaseModel):
     email: str
-
-

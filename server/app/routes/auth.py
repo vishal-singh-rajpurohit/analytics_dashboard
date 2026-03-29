@@ -283,7 +283,6 @@ async def login(payload:LoginReqSchema, response:Response):
             }
         )
 
-     
     access_tokens = genrate_token(TokenPayload(id=str(is_user.id), email=is_user.email, mobile=is_user.mobile), ACCESS_TOKEN_SECRET, ACCESS_TOKEN_EXPIRY)
     refresh_tokens = genrate_token(TokenPayload(id=str(is_user.id), email=is_user.email, mobile=is_user.mobile), REFRESH_TOKEN_SECRET, REFRESH_TOKEN_EXPIRY)
     decoded_data = decrypt_token(access_tokens, ACCESS_TOKEN_SECRET)

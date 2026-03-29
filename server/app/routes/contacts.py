@@ -138,3 +138,4 @@ async def get_contacts(id: str, req: Request):
         message = 'contact found',
         contact = contact
     )
+
