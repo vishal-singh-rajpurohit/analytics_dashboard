@@ -1,6 +1,6 @@
 "use client"
 import { LoadButton } from "@/app/components/ui/Buttons";
-import { ReportVisitCard, UserDetailCard } from "@/app/components/ui/Cards";
+import { ComingSoon, ReportVisitCard, UserDetailCard } from "@/app/components/ui/Cards";
 import { BlurModel } from "@/app/components/ui/Model";
 import { setFilter, setStateNav } from "@/app/store/functions/filters";
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
@@ -80,10 +80,15 @@ export default function StatsLayout({ children }: Readonly<{
                 (()=>{
                     if(visitCardsStats === "REPORT"){
                             // change report id dynamicallys
-                            return <BlurModel><ReportVisitCard reportId="akjfdk"  /></BlurModel>
+                            return <BlurModel><ReportVisitCard  /></BlurModel>
                     }
                     else if(visitCardsStats === "USER"){
-                        return <BlurModel ><UserDetailCard userId="asdkfjsdjfk" /></BlurModel>
+                        return <BlurModel ><UserDetailCard /></BlurModel>
+                    } 
+                    else if(visitCardsStats === "CONTACT"){
+                        return(
+                            <BlurModel ><ComingSoon /></BlurModel>
+                        )
                     }
                 })()
             }

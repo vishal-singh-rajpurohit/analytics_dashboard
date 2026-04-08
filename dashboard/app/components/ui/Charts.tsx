@@ -31,7 +31,7 @@ export const LoginCompareChart: React.FC<Props> = ({
     labels,
     compariosnType,
 }) => {
-    const filters = ["WEEKLY", "MONTHS" ,"ANNUAL"];
+    const filters = ["WEEKLY", "MONTHS"];
 
     const disp = useAppDispatch();
 

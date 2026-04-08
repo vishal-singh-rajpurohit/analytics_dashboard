@@ -1,20 +1,20 @@
 "use client"
 import { LoginCompareChart, ChartGrid, ReportsBarChart } from "./components/ui/Charts";
 import Hero from "./components/ui/Hero";
-import { Report, ReportsTable } from "./components/ui/Tables";
+import { ReportsTableSub } from "./components/ui/Tables";
 import { useAppSelector } from "./store/hooks";
 
 
 export default function Home() {
-  const filter = useAppSelector(state => state.filter.filter)
+  const filter = useAppSelector(state => state.filter.filter);
+  const reports = useAppSelector(state => state.auth.reports);
 
-  const data: Report[] = [
-    { id: 1, message: "Fake product detected", type: "Fraud" },
-    { id: 2, message: "Fake product detected", type: "Fraud" },
-    { id: 3, message: "User verified successfully", type: "Genuine" },
-    { id: 4, message: "New complaint received", type: "New" },
-    { id: 5, message: "New complaint received", type: "New" },
-  ];
+  const loginCountW = useAppSelector(state=>state.auth.analytics.loginCount).slice(0, 7).map((val, index)=> index < 7 ? val.count : 0);
+
+  const prevLoginCountW = useAppSelector(state=>state.auth.analytics.prevLoginCount).slice(0, 7).map((val, index)=> index < 7 ? val.count : 0);
+
+  const prevLoginCountM = useAppSelector(state=>state.auth.analytics.prevLoginCount).map((val, index)=> index < 7 ? val.count : 0);
+  const loginCountM = useAppSelector(state=>state.auth.analytics.loginCount).map((val, index)=> index < 7 ? val.count : 0);
 
   return (
     <main className="flex flex-col gap-6">
@@ -23,16 +23,16 @@ export default function Home() {
       </div>
       <ChartGrid>
         <LoginCompareChart labels={
-          filter === "WEEKLY" ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["Jan", "Fed", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dev"]}
-          last={filter === "WEEKLY" ? [14, 25, 24, 22, 18, 19, 55] : [14, 25, 24, 22, 18, 19, 55, 87, 87, 700, 650]}
-          current={filter === "WEEKLY" ? [14, 25, 24, 32, 18, 25, 68] : [14, 25, 24, 32, 18, 25, 156]}
+          filter === "WEEKLY" ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"]}
+          last={filter === "WEEKLY" ? [...prevLoginCountW] : prevLoginCountM}
+          current={filter === "WEEKLY" ? loginCountW : loginCountM}
           compariosnType={filter === "WEEKLY" ? "Daily Logins Comapriosion per week" : "Annual Logins Comapriosion per week"} />
 
         <ReportsBarChart fraud={123} genuine={88} newReports={53} />
       </ChartGrid>
 
       <div className="p-6 bg-slate-50 min-h-screen">
-        <ReportsTable data={data} />
+        <ReportsTableSub data={reports} />
       </div>
     </main>
   );

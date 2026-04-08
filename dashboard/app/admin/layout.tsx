@@ -1,10 +1,12 @@
 "use client"
 import Link from 'next/link'
 import React, { useState } from 'react'
+import { useAppSelector } from '../store/hooks';
+import { Loader } from '../components/ui/Loaders';
+
 
 
 function ReportsHead() {
-    const [openNav, setOpenNav] = useState<boolean>(false);
     const [nav, setNav] = useState<"LATEST" | "PENDING" | "RESOLVED" | "REJECTED">("LATEST");
 
     return (
@@ -24,10 +26,16 @@ function ReportsHead() {
 function Layout({ children }: Readonly<{
     children: React.ReactNode
 }>) {
+
+    const isLoading = useAppSelector(state=> state.toggle.isLoading)
+
     return (
         <section className="">
             <section className="">
-                {children}
+                {
+                    isLoading? <Loader /> : null
+                }
+                 {children}
             </section>
         </section>
     )

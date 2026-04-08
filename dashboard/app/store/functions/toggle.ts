@@ -14,14 +14,20 @@ function toggleVisit(state: initialStateType, action: PayloadAction<{visitTo: "C
     state.visitStats = action.payload.visitTo;
 }
 
+function toggleLoadingFunc(state: initialStateType, action: PayloadAction<{toggle: boolean}>){
+    state.isLoading = action.payload.toggle
+}
+
 export const toggleSlice = createSlice({
     name: "toggle",
     initialState: initialStates,
     reducers: {
-        setToggleVisit: toggleVisit
+        setToggleVisit: toggleVisit,
+        toggleLoading: toggleLoadingFunc
     }
 })
 
 
-export const { setToggleVisit } = toggleSlice.actions;
+export const { setToggleVisit, toggleLoading } = toggleSlice.actions;
+
 export default toggleSlice.reducer;

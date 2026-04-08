@@ -7,7 +7,6 @@ import Link from "next/link";
 const navItems = [
     { name: "Home", href: "/" },
     { name: "Analytics", href: "/admin/stats" },
-    { name: "Reports", href: "" }
 ];
 
 const Header: React.FC = () => {
@@ -36,9 +35,11 @@ const Header: React.FC = () => {
                             </Link>
                         ))}
 
+                        <Link href={"/admin/user"} >
                         <button className="ml-2 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition">
                             👤
                         </button>
+                        </Link>
                     </nav>
 
 

@@ -5,17 +5,18 @@ from ..schemas.resp_body import ContactsOverviewResponseSchema, GetSingleContact
 from ..schemas.req_body import GetItemSchema
 from bson import ObjectId
 
-contactsRouter = APIRouter(prefix='/contacts', tags=['CONTACTS'], dependencies=[Depends(is_logged_in)])
+contactsRouter = APIRouter(prefix='/contacts', tags=['CONTACTS']) 
+# contactsRouter = APIRouter(prefix='/contacts', tags=['CONTACTS'], dependencies=[Depends(is_logged_in)]) 
 
 @contactsRouter.post('/', response_model=ContactsOverviewResponseSchema ,status_code=status.HTTP_200_OK)
 async def root(req: Request, payload: GetItemSchema):
-    if not req.state.is_authenticted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                'message': 'Unautharise Access'
-            }
-        )
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
 
     contacts_pipeline = [
         {'$match': {}},
@@ -63,19 +64,12 @@ async def root(req: Request, payload: GetItemSchema):
             }
         }
     ]
-
+ 
     contacts = list(Contacts.objects().aggregate(contacts_pipeline))
     
     for item in contacts:
         item['_id'] = str(item['_id'])
 
-    if not contacts:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                'message': 'Contacts not found'
-            }
-        )
 
     return ContactsOverviewResponseSchema(
         message= 'Contacts Found',

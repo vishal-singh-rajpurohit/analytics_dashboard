@@ -6,18 +6,19 @@ from ..schemas.req_body import GetItemSchema, IdSchema
 from ..schemas.resp_body import UserOverviewResopnseSchema, GetSingleUserSchema, SuspendUserSchema
 from ..models.db_models import Users
 
-userRouter = APIRouter(prefix='/users', tags=['USER'], dependencies=[Depends(is_logged_in)])
+# userRouter = APIRouter(prefix='/users', tags=['USER'], dependencies=[Depends(is_logged_in)])
+userRouter = APIRouter(prefix='/users', tags=['USER'])
 
 @userRouter.post('/', response_model=UserOverviewResopnseSchema, status_code=status.HTTP_200_OK)
 def root(req: Request, payload: GetItemSchema):
     
-    if not req.state.is_authenticted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                'message': 'Unautharise Access'
-            }
-        )
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
 
     user_pipeline = [
         {
@@ -38,14 +39,6 @@ def root(req: Request, payload: GetItemSchema):
     for item in users:
         item['_id'] = str(item['_id'])
 
-    if not users:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                'message': 'Contacts not found'
-            }
-        )
-
     return UserOverviewResopnseSchema(
         message= 'Contacts Found',
         users= users
@@ -53,13 +46,13 @@ def root(req: Request, payload: GetItemSchema):
 
 @userRouter.get('/{id}', response_model=GetSingleUserSchema, status_code=status.HTTP_200_OK)
 def post_get_user(id: str, req: Request):
-    if not req.state.is_authenticted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                'message': 'Unautharise Access'
-            }
-        )
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
     
     if not id:
         raise HTTPException(
@@ -69,6 +62,8 @@ def post_get_user(id: str, req: Request):
             }
         )
 
+    print(id)
+
     user_pipeline = [
     {
         '$match': {'_id': ObjectId(id)}
@@ -77,8 +72,10 @@ def post_get_user(id: str, req: Request):
         '$project': {
             'userName': 1,
             'searchTag': 1, 
+            'avatar': 1, 
             'email': 1,
             'avatar': 1,
+            'online': 1,
             'longitude': 1,
             'latitude': 1,
             'createdAt': 1
@@ -98,6 +95,8 @@ def post_get_user(id: str, req: Request):
     
     user = results[0]
 
+    print('User is: ', user)
+
     user['_id'] = str(user['_id'])
 
     return GetSingleUserSchema(
@@ -107,13 +106,13 @@ def post_get_user(id: str, req: Request):
 
 @userRouter.post('/suspend', response_model=SuspendUserSchema, status_code=status.HTTP_200_OK)
 def suspend_user(payload: IdSchema, req: Request):
-    if not req.state.is_authenticted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                'message': 'Unautharise Access'
-            }
-        )
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
     
     if not payload.id:
         raise HTTPException(

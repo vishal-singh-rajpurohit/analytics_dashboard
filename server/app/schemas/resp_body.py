@@ -79,6 +79,14 @@ class ContactsOverviewSchema(BaseModel):
         populate_by_name = True
         from_attributes = True
 
+class LoginCountSchema(BaseModel):
+    id: str = Field(alias='_id')
+    count: int
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+
 class ContactsOverviewResponseSchema(BaseModel):
     message: str
     contacts: List[ContactsOverviewSchema]
@@ -130,8 +138,21 @@ class LoginRespSchema(BaseModel):
     users: List[UserOverviewSchema]
     reports: List[ReportOverviewSchema]
     contacts: List[ContactsOverviewSchema]
+    msgCount: List[LoginCountSchema]
+    loginCount: List[LoginCountSchema]
+    prevMsgCount: List[LoginCountSchema]
+    prevLoginCount: List[LoginCountSchema]
+    superAdmin: str
     
     class Config:
+        from_attributes = True
+
+class ReportedBySchema(BaseModel):
+    id: str = Field(alias="_id")
+    searchTag: str
+
+    class Config:
+        populate_by_name = True
         from_attributes = True
 
 class SingleReportSchema(BaseModel):
@@ -141,7 +162,8 @@ class SingleReportSchema(BaseModel):
     type: str = Field(alias='reportType')
     message: str
     createdAt: datetime
-
+    reportedBy: ReportedBySchema
+    
     class Config:
         populate_by_name = True
         from_attributes = True
@@ -175,16 +197,17 @@ class SingleUserSchema(BaseModel):
     id: str = Field(alias='_id')
     userName: str
     searchTag: str
+    avatar: str
     email: str
     avatar: str
-    longitude: float   
-    latitude: float    
+    online: bool
+    longitude: str 
+    latitude: str    
     createdAt: datetime
 
     class Config:
         populate_by_name = True
         from_attributes = True
-
 
 class GetSingleUserSchema(BaseModel):
     message: str
@@ -198,3 +221,4 @@ class SuspendUserSchema(BaseModel):
 
     class Config:
         from_attributes = True
+

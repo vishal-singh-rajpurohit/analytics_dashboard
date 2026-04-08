@@ -272,7 +272,7 @@ class Messages(Document):
     updatedAt = DateTimeField(default=datetime.utcnow)
 
     meta = {
-        'collection': 'message',
+        'collection': 'messages',
 
         'timeseries': {
             'timeField': 'createdAt',
@@ -351,6 +351,19 @@ class Seen(Document):
             ('messageId', 'userId')  
         ]
     }
+
+    def save(self, *args, **kwargs):
+        self.updatedAt = datetime.utcnow()
+        return super(Seen, self).save(*args, **kwargs)
+
+class Logins(Document):
+    meta = {
+        'collection': 'logins'
+    }
+
+    userId = ReferenceField(Users, required=True)
+    createdAt = DateTimeField(default=datetime.utcnow)
+    updatedAt = DateTimeField(default=datetime.utcnow)
 
     def save(self, *args, **kwargs):
         self.updatedAt = datetime.utcnow()

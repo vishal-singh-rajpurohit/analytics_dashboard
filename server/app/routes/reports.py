@@ -6,17 +6,27 @@ from ..schemas.req_body import GetItemSchema, IdSchema
 from bson import ObjectId
 
 
-reportsRouter = APIRouter(prefix='/reports', tags=['REPORTS'], dependencies=[Depends(is_logged_in)])
+# reportsRouter = APIRouter(prefix='/reports', tags=['REPORTS'], dependencies=[Depends(is_logged_in)])
+reportsRouter = APIRouter(prefix='/reports', tags=['REPORTS'])
+
+"""
+    add middleware back in production
+"""
 
 @reportsRouter.post('/', response_model=ReportOverviewResponseSchema, status_code=status.HTTP_200_OK)
 async def root(req: Request, payload: GetItemSchema):
-    if not req.state.is_authenticted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                'message': 'Unautharise Access'
-            }
-        )
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
+
+
+    print((payload.count * payload.page) - payload.count)
+
+    print(payload.count)
     
     reports_pipeline = [
         {'$match': {}},
@@ -33,17 +43,11 @@ async def root(req: Request, payload: GetItemSchema):
     ]
 
     reports = list(Feedback.objects().aggregate(reports_pipeline))
+
+    print(reports)
     
     for item in reports:
         item['_id'] = str(item['_id'])
-
-    if not reports:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                'message': 'Reports not found'
-            }
-        )
 
     return ReportOverviewResponseSchema(
         message= 'Reports Found',
@@ -52,18 +56,45 @@ async def root(req: Request, payload: GetItemSchema):
 
 @reportsRouter.get('/{id}', response_model=GetSingleReportRespSchema, status_code=status.HTTP_200_OK)
 async def get_report(id: str, req: Request):
-    if not req.state.is_authenticted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                'message': 'Unautharise Access'
-            }
-        )
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
+
     
     report_pipeline = [
-        {'$match': {
+        {
+            '$match': {
             '_id': ObjectId(id)
-        }}
+            }
+        },
+        {
+            '$lookup': {
+                'from': "users",
+                'localField': "userId",
+                'foreignField': "_id",
+                'as': "reportedBy"
+            }
+        },
+        {
+            '$unwind': {
+                'path': "$reportedBy"
+            }
+        },
+        {
+            '$project': {
+                'userId': 1,
+                'contactId': 1,
+                'message': 1,
+                'type': 1,
+                'createdAt': 1,
+                "reportedBy._id": 1,
+                "reportedBy.searchTag": 1
+            }
+        }
     ]
 
     report = list(Feedback.objects().aggregate(report_pipeline))[0]
@@ -79,6 +110,7 @@ async def get_report(id: str, req: Request):
     report['_id'] = str(report['_id'])
     report['userId'] = str(report['userId'])
     report['contactId'] = str(report['contactId'])
+    report['reportedBy']['_id'] = str(report['reportedBy']['_id']) 
 
     return GetSingleReportRespSchema(
         message="Full Report found",
@@ -87,13 +119,13 @@ async def get_report(id: str, req: Request):
 
 @reportsRouter.post('/reject', response_model=SuspendUserSchema, status_code=status.HTTP_200_OK)
 async def reject(payload: IdSchema, req: Request):
-    if not req.state.is_authenticted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                'message': 'Unautharise Access'
-            }
-        )
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
     
     if not payload.id:
         raise HTTPException(

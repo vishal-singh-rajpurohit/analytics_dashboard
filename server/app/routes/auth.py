@@ -1,8 +1,8 @@
 from fastapi import APIRouter, status, HTTPException, Response, Request, Depends
 from dotenv import load_dotenv
 import os
-
-from ..models.db_models import Admin, Users, Contacts, Feedback
+from bson import ObjectId
+from ..models.db_models import Admin, Users, Contacts, Feedback, Logins, Messages
 from ..schemas.req_body import RegisterReqSchema, LoginReqSchema, SuspendUserSchema
 from ..schemas.super_resp import RegisterSuperAdminRespSchema
 from ..schemas.resp_body import CreateAdminRespSchema, SuspendedAdminSchema, LogoutSchema, LoginRespSchema
@@ -18,6 +18,12 @@ REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
 REFRESH_TOKEN_EXPIRY = os.getenv("REFRESH_TOKEN_EXPIRY")
 ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
 ACCESS_TOKEN_EXPIRY = os.getenv("ACCESS_TOKEN_EXPIRY")
+
+@authRouter.get('/test', status_code=status.HTTP_200_OK)
+async def root():
+    return{
+        'message': 'test success'
+    }
 
 @authRouter.post('/register', response_model=RegisterSuperAdminRespSchema, status_code=status.HTTP_200_OK)
 async def register(payload: RegisterReqSchema):
@@ -167,7 +173,7 @@ async def login(payload:LoginReqSchema, response:Response):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
-                "message": "Email is already in use"
+                "message": "User not found"
             })
     
     if is_user.isSuspended:
@@ -261,11 +267,95 @@ async def login(payload:LoginReqSchema, response:Response):
             }
         }
     ]
-     
+
+    super_admin_pipeline = [
+        {
+            "$match": {
+            "_id": ObjectId('69c81cb211612b081d5ae68c')
+            }
+        },
+        {
+            "$lookup": {
+            "from": 'admin',
+            "localField": 'superior',
+            "foreignField": '_id',
+            "as": 'superior'
+            }
+        },
+        {
+            "$unwind": {
+            "path": '$superior',
+            }
+        },
+        {
+            "$addFields": {
+            "superiorAdminName": "$superior.name"
+            }
+        },
+        {
+            "$project": {
+            'superiorAdminName': 1
+            }
+        }
+    ]
+    
+    login_pipeline_prev = [
+        {
+            '$match': {}
+        },
+        {
+            '$group': {
+            '_id': {
+                '$dateToString': {
+                'format': "%Y-%m-%d",
+                'date': "$updatedAt"
+                }
+            },
+            'count': { '$sum': 1 }
+            }
+        },
+        {
+            '$skip': 30
+        },
+        {
+            '$limit': 30
+        }
+    ]
+
+    login_pipeline = [
+        {
+            '$match': {}
+        },
+        {
+            '$group': {
+            '_id': {
+                '$dateToString': {
+                'format': "%Y-%m-%d",
+                'date': "$updatedAt"
+                }
+            },
+            'count': { '$sum': 1 }
+            }
+        },
+        {
+            '$limit': 30
+        }
+    ]
+
     users = list(Users.objects().aggregate(user_pipeline))
     reports = list(Feedback.objects().aggregate(reports_pipeline))
     contacts = list(Contacts.objects().aggregate(contacts_pipeline))
+    superAdmin = list(Admin.objects().aggregate(super_admin_pipeline))
+    superAdmin = list(Admin.objects().aggregate(super_admin_pipeline))
+
+    loginCount = list(Logins.objects().aggregate(login_pipeline))
+    prevLoginCount = list(Logins.objects().aggregate(login_pipeline_prev))
     
+    messageCount = list(Messages.objects().aggregate(login_pipeline))
+    prevMessageCount = list(Messages.objects().aggregate(login_pipeline_prev))
+
+    print('The Login Count: ',messageCount)
+   
     for item in users:
         item['_id'] = str(item['_id'])
 
@@ -296,8 +386,8 @@ async def login(payload:LoginReqSchema, response:Response):
                 'message': 'Aunautharised Access'
             })
     
-    response.set_cookie(key='ACCESS_TOKEN', value=access_tokens)
-    response.set_cookie(key='REFRESH_TOKEN', value=refresh_tokens)
+    response.set_cookie(key='ACCESS_TOKEN', value=access_tokens, httponly=True,secure=False,samesite="lax",path="/")
+    response.set_cookie(key='REFRESH_TOKEN', value=refresh_tokens, httponly=True, secure=False, samesite="lax", path="/")
 
     return LoginRespSchema(
         message='Done',
@@ -308,7 +398,12 @@ async def login(payload:LoginReqSchema, response:Response):
         role=is_user.role,
         contacts=contacts,
         reports=reports,
-        users=users        
+        users=users,
+        superAdmin=superAdmin[0]["superiorAdminName"],
+        loginCount=loginCount,
+        prevLoginCount=prevLoginCount,
+        msgCount=messageCount,
+        prevMsgCount=prevMessageCount,
     )
 
 @authRouter.post('/suspend', response_model=SuspendedAdminSchema, status_code=status.HTTP_200_OK, dependencies=[Depends(restrict_unautharised_access)])
@@ -422,8 +517,8 @@ async def enter(req: Request, resp: Response):
                 'message': 'Aunautharised Access'
             })
     
-    resp.set_cookie(key='ACCESS_TOKEN', value=access_tokens_new)
-    resp.set_cookie(key='REFRESH_TOKEN', value=refresh_tokens)
+    resp.set_cookie(key='ACCESS_TOKEN', value=access_tokens_new, httponly=True,secure=False,samesite="lax",path="/")
+    resp.set_cookie(key='REFRESH_TOKEN', value=refresh_tokens, httponly=True,secure=False,samesite="lax",path="/")
 
     return RegisterSuperAdminRespSchema(
         message='Done',
