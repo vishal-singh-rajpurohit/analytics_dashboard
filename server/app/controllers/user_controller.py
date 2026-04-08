@@ -1,6 +1,188 @@
-from fastapi import APIRouter
+from fastapi import  Request, HTTPException, status
+from bson import ObjectId
+from ..schemas.req_body import GetItemSchema, IdSchema
+from ..schemas.resp_body import UserOverviewResopnseSchema, GetSingleUserSchema, SuspendUserSchema
+from ..models.db_models import Users
 
-router = APIRouter()
 
-async def find_users():
-    pass
+async def get_users(req: Request, payload: GetItemSchema):
+    
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
+
+    user_pipeline = [
+        {
+            '$match': {}
+        },
+        {'$skip': (payload.count * payload.page) - payload.count},
+        {'$limit': payload.count},
+        {
+            '$project': {
+            'searchTag': 1,
+            'online': 1
+            }
+        }
+    ]
+
+    users = list(await Users.objects().aggregate(user_pipeline))
+    
+    for item in users:
+        item['_id'] = str(item['_id'])
+
+    return UserOverviewResopnseSchema(
+        message= 'Contacts Found',
+        users= users
+    )
+
+async def get_user(id: str, req: Request):
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
+    
+    if not id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                'message': 'User id Required'
+            }
+        )
+
+    print(id)
+
+    user_pipeline = [
+    {
+        '$match': {'_id': ObjectId(id)}
+    },
+    {
+        '$project': {
+            'userName': 1,
+            'searchTag': 1, 
+            'avatar': 1, 
+            'email': 1,
+            'avatar': 1,
+            'online': 1,
+            'longitude': 1,
+            'latitude': 1,
+            'createdAt': 1
+        }
+    }
+]
+
+    results = list(Users.objects().aggregate(user_pipeline))
+
+    if not results:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                'message': 'User not found'
+            }
+        )
+    
+    user = results[0]
+
+    print('User is: ', user)
+
+    user['_id'] = str(user['_id'])
+
+    return GetSingleUserSchema(
+        message= 'User Found',
+        user= user
+    )
+
+async def suspend_user(payload: IdSchema, req: Request):
+    # if not req.state.is_authenticted:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail={
+    #             'message': 'Unautharise Access'
+    #         }
+    #     )
+    
+    if not payload.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                'message': 'User id Required'
+            }
+        )
+
+    user = Users.objects(id=payload.id).update_one(set__isSuspended = True)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                'message': 'User not found'
+            }
+        )
+    
+    return SuspendUserSchema(message="User Suspended")
+
+async def activate_user(payload: IdSchema, req: Request):
+    if not req.state.is_authenticted:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                'message': 'Unautharise Access'
+            }
+        )
+    
+    if not payload.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                'message': 'User id Required'
+            }
+        )
+
+    user = Users.objects(id=payload.id).update_one(set__isSuspended = False)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                'message': 'User not found'
+            }
+        )
+    
+    return SuspendUserSchema(message="User id is Activate again")
+
+async def notify_user(payload: IdSchema, req: Request):
+    if not req.state.is_authenticted:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                'message': 'Unautharise Access'
+            }
+        )
+    
+    if not payload.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                'message': 'User id Required'
+            }
+        )
+
+    user = Users.objects(id=payload.id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                'message': 'User not found'
+            }
+        )
+    
+    # Send e-mail to the user
+    
+    return SuspendUserSchema(message="User will recive the email soon")

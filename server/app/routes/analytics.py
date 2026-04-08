@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends
-import pandas as pd
 from ..middleware.auth_middleware import is_logged_in
-from ..models.db_models import Users
 from ..models.db_models import Logins
 
 
